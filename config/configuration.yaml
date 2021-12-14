@@ -1,104 +1,99 @@
-homeassistant:
-  external_url: !secret ahsl_base_url
-  internal_url: http://192.168.7.187:8123
-  customize: !include customize.yaml
-  auth_providers:
-    - type: homeassistant
-  packages: !include_dir_named packages
-  media_dirs:
-    haunted_sounds: /media/haunted_sounds
-    music: /media/music
-    sounds: /media/sounds
-    disney: /media/disney
-    books: /media/books
-    images: /media/images
-
-
 # Configure a default setup of Home Assistant (frontend, api, etc)
 default_config:
 
-# Uncomment this if you are using SSL/TLS, running in Docker container, etc.
+homeassistant:
+  packages: !include_dir_named packages
+  customize: !include customize.yaml
+
+network:
+  
+system_health:
+
+recorder: 
+  auto_purge: true
+  purge_keep_days: 5
+  
+zone:
+  name: Home
+  latitude: !secret home_latitude
+  longitude: !secret home_longitude
+  radius: 10
+  icon: mdi:home
+
+# Text to speech
+tts:
+  - platform: google_translate
+  
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+sensor: !include_dir_merge_list binary_sensor
+
+sun:
+      
+frontend:
+  themes: !include_dir_merge_named themes
+  
 http:
-  # ssl_certificate: !secret ahsl_ssl_cert
-  # ssl_key: !secret ahsl_ssl_key
-  use_x_forwarded_for: true
-  trusted_proxies: !secret proxy_ips
-  ip_ban_enabled: false
+  ssl_certificate: /ssl/fullchain.pem
+  ssl_key: /ssl/privkey.pem
+  ip_ban_enabled: true
   login_attempts_threshold: 5
 
+octoprint:
+  - host: !secret octoprint_url
+    api_key: !secret octoprint_api
+    name: Ender 5 Plus
+    bed: true
+    number_of_tools: 1
+    sensors:
+      monitored_conditions:
+        - 'Current State'
+        - 'Temperatures'
+        - 'Job Percentage'
+        - 'Time Elapsed'
+        - 'Time Remaining'
+
+# Example configuration.yaml entry
+light:
+  - platform: group
+    name: Bedroom Lights
+    entities:
+      - light.bedroomlamp
+      - light.whitebulb
+
+stream:
+
+# spotify integration
+spotify:
+  client_id: !secret spotify_clientid
+  client_secret: !secret spotify_secret
+
+### Imported from thejeffreystone github
 ssdp:
 
 zeroconf:
-
-system_health:
 
 mobile_app:
 
 person:
 
-frontend:
-  themes: !include_dir_merge_named themes
-
 cloud:
 
 conversation:
-
-device_tracker:
-  - platform: eero_tracker
-    consider_home: 300
-    interval_seconds: 60
-    only_macs: "68:54:fd:29:20:87, 68:54:fd:d5:ae:3d, 50:dc:e7:5b:10:69, 2c:cc:44:bf:9b:b4, 28:18:78:74:79:10, 44:61:32:f8:c8:09, 64:cf:d9:3c:5d:0c, 50:02:91:ed:2c:47, ec:71:db:31:0e:6c, 4e:6d:02:24:ac:87, 7c:1c:4e:2e:62:30, dc:03:98:3e:a9:6d"
-  # - platform: icloud3
-  #   username: !secret ICLOUD_USER
-  #   password: !secret ICLOUD_PASS
 
 discovery:
 
 template:
   - binary_sensor:
-      - name: "Kat Driving"
-        state: > 
-          {{ state_attr('device_tracker.life360_kat_stone', 'speed') | int > 0 }}
-  - binary_sensor:
-    - name: "Jeff Driving"
-      state: > 
-        {{ state_attr('device_tracker.life360_jeff_stone', 'speed') | int > 0 }}
-  - trigger:
-      - platform: state
-        entity_id: sensor.recent_lighting_strikes
-    binary_sensor:
-      - name: lightning_detected
-        unique_id: lightning_detected_sensor
-        state: >
-          {{ states('sensor.recent_lightning_strikes') | int > 0 }}
-        device_class: safety
+    - name: lightning_detected
+      unique_id: lightning_detected_sensor
+      state: >
+        {{ states('sensor.recent_lightining_strikes') | int > 0 }}
+      device_class: safety
 
 updater:
   include_used_components: true
 
-sun:
-
-python_script:
-
 map:
-
-
-group: !include groups.yaml
-
-
-### Includes ###
-alert: !include_dir_merge_named alerts/
-automation: !include automations.yaml
-script: !include scripts.yaml
-sensor: !include_dir_merge_list sensors
-binary_sensor: !include_dir_merge_list binary_sensors
-# light: !include lights.yaml
-switch: !include switches.yaml
-scene: !include scenes.yaml
-input_select: !include input_select.yaml
-input_boolean: !include input_boolean.yaml
-input_datetime: !include input_datetime.yaml
-zone: !include zones.yaml
-
-shell_command:
-  google_token: sed -i -e 's/2client.client"}2client.client"}/2client.client"}/g' /config/.google.token
